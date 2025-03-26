@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>名山选择器</title>
+    <style>
+      body {
+        font-family: "Helvetica Neue", Arial, sans-serif;
+        margin: 0;
+        padding: 0;
+        height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        background-color: #f8f4f0;
+        color: #5a4a42;
+        overflow: hidden;
+        position: relative;
+      }
+
+      .container {
+        text-align: center;
+        z-index: 10;
+        background-color: rgba(255, 255, 255, 0.85);
+        padding: 2rem 3rem;
+        border-radius: 16px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        max-width: 500px;
+        width: 90%;
+      }
+
+      h1 {
+        font-weight: 300;
+        margin-bottom: 1rem;
+        color: #6b5b52;
+      }
+
+      #countdown {
+        font-size: 3.5rem;
+        font-weight: 200;
+        color: #9c786c;
+        margin: 1.5rem 0;
+        height: 4rem;
+      }
+
+      #result {
+        font-size: 1.8rem;
+        color: #7a5c50;
+        margin: 1.5rem 0;
+        min-height: 3rem;
+        font-weight: 400;
+        transition: all 0.3s ease;
+        height: 3rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      button {
+        background-color: #a38f84;
+        color: white;
+        border: none;
+        padding: 0.8rem 2rem;
+        font-size: 1rem;
+        border-radius: 24px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        letter-spacing: 1px;
+        font-weight: 300;
+        margin-top: 1rem;
+      }
+
+      button:hover {
+        background-color: #8a766c;
+        transform: translateY(-2px);
+      }
+
+      button:disabled {
+        background-color: #d1c7c1;
+        cursor: not-allowed;
+        transform: none;
+      }
+
+      .mountain-item {
+        position: absolute;
+        font-size: 1rem;
+        color: #c4b6ad;
+        transition: all 0.3s ease;
+        opacity: 0.6;
+        cursor: default;
+        user-select: none;
+        pointer-events: none;
+        transform-origin: center;
+      }
+
+      .mountain-item.active {
+        color: #9c786c;
+        font-weight: 500;
+        font-size: 1.4rem;
+        opacity: 1;
+        text-shadow: 0 0 12px rgba(156, 120, 108, 0.3);
+        z-index: 15;
+        animation: activePulse 0.5s ease-out forwards;
+        background-color: rgba(255, 245, 240, 0.7);
+        padding: 0.2rem 0.5rem;
+        border-radius: 1rem;
+        box-shadow: 0 2px 8px rgba(156, 120, 108, 0.2);
+      }
+
+      .mountain-item.final-selected {
+        color: #7a5c50;
+        font-weight: 600;
+        font-size: 2.2rem;
+        opacity: 1;
+        text-shadow: 0 0 16px rgba(156, 120, 108, 0.4);
+        z-index: 25;
+        transform: translate(-50%, -50%) scale(2);
+        left: 50% !important;
+        top: 50% !important;
+        transition: all 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        background-color: rgba(255, 245, 240, 0.9);
+        padding: 0.3rem 0.8rem;
+        border-radius: 1.2rem;
+        box-shadow: 0 4px 16px rgba(156, 120, 108, 0.3);
+      }
+
+      .description {
+        font-size: 0.9rem;
+        color: #a38f84;
+        margin-bottom: 1.5rem;
+        line-height: 1.5;
+        font-weight: 300;
+      }
+
+      .result-highlight {
+        animation: textPulse 0.3s ease;
+      }
+
+      @keyframes activePulse {
+        0% {
+          transform: scale(1);
+        }
+        50% {
+          transform: scale(1.3);
+        }
+        100% {
+          transform: scale(1.2);
+        }
+      }
+
+      @keyframes textPulse {
+        0% {
+          transform: scale(1);
+        }
+        50% {
+          transform: scale(1.1);
+        }
+        100% {
+          transform: scale(1);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="mountains-container"></div>
+
+    <div class="container">
+      <h1>名山选择器</h1>
+      <p class="description">点击开始按钮，系统将随机选择一座名山</p>
+
+      <div id="countdown">--</div>
+      <div id="result"></div>
+
+      <button id="startBtn">开始选择</button>
+    </div>
+
+    <script>
+      // 国内各大名山列表
+      const mountains = [
+        "泰山",
+        "华山",
+        "衡山",
+        "恒山",
+        "嵩山",
+        "黄山",
+        "庐山",
+        "雁荡山",
+        "武夷山",
+        "武当山",
+        "峨眉山",
+        "九华山",
+        "普陀山",
+        "五台山",
+        "青城山",
+        "龙虎山",
+        "崂山",
+        "三清山",
+        "长白山",
+        "玉山",
+        "阿里山",
+        "昆仑山",
+        "天山",
+        "祁连山",
+        "喜马拉雅山",
+        "冈仁波齐",
+        "梅里雪山",
+        "玉龙雪山",
+        "四姑娘山",
+        "贡嘎山",
+      ];
+
+      const startBtn = document.getElementById("startBtn");
+      const countdownEl = document.getElementById("countdown");
+      const resultEl = document.getElementById("result");
+      const mountainsContainer = document.getElementById("mountains-container");
+
+      let countdown;
+      let countdownValue = 5;
+      let selectionInterval;
+      let mountainElements = [];
+      let currentActive = null;
+
+      // 初始化名山在背景中的随机分布
+      function initMountainDistribution() {
+        mountainsContainer.innerHTML = "";
+        mountainElements = [];
+
+        mountains.forEach((mountain) => {
+          const element = document.createElement("div");
+          element.className = "mountain-item";
+          element.textContent = mountain;
+          element.dataset.name = mountain;
+
+          // 随机位置 (避开中心区域)
+          let left, top;
+          do {
+            left = Math.random() * 85 + 7.5;
+            top = Math.random() * 85 + 7.5;
+          } while (left > 30 && left < 70 && top > 30 && top < 70);
+
+          element.style.left = `${left}%`;
+          element.style.top = `${top}%`;
+
+          // 随机大小和旋转
+          const size = 0.8 + Math.random() * 0.6;
+          element.style.fontSize = `${size}rem`;
+          element.style.transform = `rotate(${Math.random() * 15 - 7.5}deg)`;
+
+          mountainsContainer.appendChild(element);
+          mountainElements.push(element);
+        });
+      }
+
+      // 开始倒计时
+      function startCountdown() {
+        startBtn.disabled = true;
+        resultEl.textContent = "";
+        initMountainDistribution();
+
+        // 重置所有状态
+        mountainElements.forEach((el) => {
+          el.classList.remove("active", "final-selected");
+          el.style.opacity = "0.6";
+          el.style.zIndex = "auto";
+        });
+
+        countdownValue = 5;
+        countdownEl.textContent = countdownValue;
+
+        // 快速选择动画 (50ms切换一次)
+        selectionInterval = setInterval(() => {
+          // 移除之前激活的样式
+          if (currentActive) {
+            currentActive.classList.remove("active");
+          }
+
+          // 随机选择新的激活项
+          const randomIndex = Math.floor(
+            Math.random() * mountainElements.length
+          );
+          currentActive = mountainElements[randomIndex];
+          currentActive.classList.add("active");
+
+          // 更新结果显示
+          resultEl.textContent = currentActive.dataset.name;
+          resultEl.classList.add("result-highlight");
+          setTimeout(() => resultEl.classList.remove("result-highlight"), 300);
+        }, 50);
+
+        countdown = setInterval(() => {
+          countdownValue--;
+          countdownEl.textContent = countdownValue;
+
+          if (countdownValue <= 0) {
+            clearInterval(countdown);
+            clearInterval(selectionInterval);
+            // selectRandomMountain();
+            countdownEl.textContent = "完成";
+            startBtn.disabled = false;
+          }
+        }, 1000);
+      }
+
+      // 随机选择一座名山
+      function selectRandomMountain() {
+        const randomIndex = Math.floor(Math.random() * mountainElements.length);
+        const selectedElement = mountainElements[randomIndex];
+        const selectedMountain = selectedElement.dataset.name;
+
+        // 移除所有激活状态
+        mountainElements.forEach((el) => {
+          el.classList.remove("active");
+        });
+
+        // 设置最终选中项
+        selectedElement.classList.add("final-selected");
+        resultEl.textContent = selectedMountain;
+
+        // 其他山体淡化
+        mountainElements.forEach((el) => {
+          if (el !== selectedElement) {
+            el.style.opacity = "0.3";
+          }
+        });
+      }
+
+      // 事件监听
+      startBtn.addEventListener("click", startCountdown);
+
+      // 初始化
+      initMountainDistribution();
+      countdownEl.textContent = "--";
+    </script>
+  </body>
+</html>
